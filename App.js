@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as SplashScreen from 'expo-splash-screen';
 import { auth } from './config/firebaseConfig';
 import AuthScreen from './screen/Auth';
 import MainApp from './navigation/MainApp';
+import axios from 'axios';
+import useFonts from './utils/useFonts';  // Assurez-vous que le chemin est correct
 
 const Stack = createNativeStackNavigator();
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [fontsLoaded, setFontsLoaded] = useState(false);
   const [pokemonData, setPokemonData] = useState([]);
   const [user, setUser] = useState(null);
+  const fontsLoaded = useFonts();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(user => {
@@ -37,23 +40,8 @@ const App = () => {
     }
   };
 
-  const loadResourcesAndDataAsync = async () => {
-    try {
-      await fetchFonts();
-    } catch (e) {
-      console.warn(e);
-    } finally {
-      setFontsLoaded(true);
-      SplashScreen.hideAsync();
-    }
-  };
-
-  useEffect(() => {
-    loadResourcesAndDataAsync();
-  }, []);
-
   if (!fontsLoaded || isLoading) {
-    return null;
+    return null;  // Vous pouvez retourner un écran de chargement ici si nécessaire
   }
 
   return (
