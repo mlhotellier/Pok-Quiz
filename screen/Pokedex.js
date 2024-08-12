@@ -53,6 +53,7 @@ const Pokedex = ({ navigation, pokemonData, isLoading }) => {
           renderItem={pokeCard}
           numColumns={3}
           columnWrapperStyle={styles.row}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
