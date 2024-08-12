@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { auth, firestore } from '../config/firebaseConfig'; // Assurez-vous que le chemin est correct
+import { auth, firestore } from '../config/firebaseConfig';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const Profile = ({ navigation }) => {
@@ -17,7 +17,6 @@ const Profile = ({ navigation }) => {
         if (userDoc.exists) {
           const data = userDoc.data();
           setNickname(data.nickname || '');
-          // Vous pouvez ajouter ici la gestion de l'image si nécessaire
         }
       }
       setLoading(false);
@@ -30,7 +29,7 @@ const Profile = ({ navigation }) => {
     if (user) {
       await firestore.collection('users').doc(user.uid).set({ nickname }, { merge: true });
       alert('Nickname updated!');
-      setInputNickname(false); // Cacher le champ d'entrée après la sauvegarde
+      setInputNickname(false);
     }
   };
 
@@ -44,7 +43,7 @@ const Profile = ({ navigation }) => {
   };
 
   const handleEditNickname = () => {
-    setInputNickname(true); // Montrer le champ d'entrée pour modifier le surnom
+    setInputNickname(true);
   };
 
   if (loading) {

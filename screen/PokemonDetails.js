@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 
 const PokemonDetails = ({ route }) => {
   const { pokemon, pokemonData } = route.params;
@@ -17,7 +17,6 @@ const PokemonDetails = ({ route }) => {
   };
 
   const currentPokemon = pokemonData[currentIndex];
-  // console.log(currentPokemon);
 
   return (
     <View style={styles.container}>
@@ -138,7 +137,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
-    width: '45%', // Utilisation de 45% pour gérer l'espace entre les boutons
+    width: '45%',
   },
   buttonText: {
     color: '#fff',

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, Text, StyleSheet, Image } from 'react-native';
-import { auth, firestore } from '../config/firebaseConfig'; // Assurez-vous que le chemin est correct
+import { auth, firestore } from '../config/firebaseConfig';
 import IconApp from '../assets/icon.png'
 
 const AuthScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false); // État pour déterminer le mode d'authentification
+  const [isSignUp, setIsSignUp] = useState(false);
 
   const handleAuth = async () => {
     try {
@@ -59,20 +59,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 16,
-    alignItems: 'center', // Centrer le contenu horizontalement
+    alignItems: 'center',
     backgroundColor: "#fff",
   },
   logo: {
-    width: 200, // Ajustez la largeur selon vos besoins
-    height: 200, // Ajustez la hauteur selon vos besoins
-    marginBottom: 40, // Marge sous l'image
+    width: 200,
+    height: 200,
+    marginBottom: 40,
   },
   input: {
     height: 40,
     borderColor: 'gray',
     borderBottomWidth: 1,
     marginBottom: 12,
-    width: '100%', // Pour utiliser toute la largeur disponible
+    width: '100%',
   },
   error: {
     color: 'red',
