@@ -27,6 +27,15 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "firebaseApiKey": "AIzaSyCLmM2YVmJLqFgl8CtO1mcpCPvW064ofQ8",
+      "firebaseAuthDomain": "pokequiz-b56b7.firebaseapp.com",
+      "firebaseProjectId": "pokequiz-b56b7",
+      "firebaseStorageBucket": "pokequiz-b56b7.appspot.com",
+      "firebaseMessagingSenderId": "200734293949",
+      "firebaseAppIdIos": "1:200734293949:ios:dddb045a19bfbf05705cd4",
+      "firebaseAppIdAndroid": "1:200734293949:android:9ed8ee402dcca6d9705cd4"
+    }
   }
 }

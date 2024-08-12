@@ -1,17 +1,18 @@
-import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
+import { Platform } from 'react-native';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCLmM2YVmJLqFgl8CtO1mcpCPvW064ofQ8",
-  authDomain: "pokequiz-b56b7.firebaseapp.com",
-  projectId: "pokequiz-b56b7",
-  storageBucket: "pokequiz-b56b7.appspot.com",
-  messagingSenderId: "200734293949",
-  appId: Platform.OS === 'ios' 
-    ? "1:200734293949:ios:dddb045a19bfbf05705cd4"
-    : "1:200734293949:android:9ed8ee402dcca6d9705cd4",
+  apiKey: Constants.expoConfig.extra.firebaseApiKey,
+  authDomain: Constants.expoConfig.extra.firebaseAuthDomain,
+  projectId: Constants.expoConfig.extra.firebaseProjectId,
+  storageBucket: Constants.expoConfig.extra.firebaseStorageBucket,
+  messagingSenderId: Constants.expoConfig.extra.firebaseMessagingSenderId,
+  appId: Platform.OS === 'ios'
+    ? Constants.expoConfig.extra.firebaseAppIdIos
+    : Constants.expoConfig.extra.firebaseAppIdAndroid,
 };
 
 // Initialise Firebase si ce n'est pas déjà fait
