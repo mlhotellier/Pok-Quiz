@@ -6,6 +6,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 const Profile = ({ navigation }) => {
   const [user, setUser] = useState(null);
   const [nickname, setNickname] = useState('');
+  const [bestScore, setBestScore] = useState(0);
+  const [bestChampionScore, setBestChampionScore] = useState(0);
   const [inputNickname, setInputNickname] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -17,6 +19,8 @@ const Profile = ({ navigation }) => {
         if (userDoc.exists) {
           const data = userDoc.data();
           setNickname(data.nickname || '');
+          setBestScore(data.bestScore || 0);
+          setBestChampionScore(data.bestChampionScore || 0);
         }
       }
       setLoading(false);
@@ -68,6 +72,8 @@ const Profile = ({ navigation }) => {
           </TouchableOpacity>
         </Text>
         <Text style={styles.emailText}>Email: {user?.email}</Text>
+        <Text style={styles.emailText}>Best score : {bestScore}</Text>
+        <Text style={styles.emailText}>Best Champion score : {bestChampionScore}</Text>
       </View>
       {inputNickname && (
         <View style={styles.form}>

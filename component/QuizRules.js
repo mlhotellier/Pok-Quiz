@@ -105,12 +105,14 @@ const styles = StyleSheet.create({
     textDecorationLine: 'none',
   },
   button: {
-    backgroundColor: '#007BFF',
+    backgroundColor: 'red',
     padding: 10,
     paddingLeft: 20,
     paddingRight: 20,
     borderRadius: 5,
     marginTop: 20,
+    width:'40%',
+    marginHorizontal:'auto'
   },
   buttonText: {
     color: '#fff',

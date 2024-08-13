@@ -3,6 +3,7 @@ import QuizRules from '../component/QuizRules';
 import QuizEndScreen from '../component/QuizEndScreen';
 import QuizQuestion from '../component/QuizQuestion';
 import { View, StyleSheet } from 'react-native';
+import { auth, firestore } from '../config/firebaseConfig';
 
 const PokeQuiz = ({ pokemonData }) => {
   const timeQuiz = 60; // Temps initial pour le quiz en secondes
@@ -18,6 +19,28 @@ const PokeQuiz = ({ pokemonData }) => {
   const [masterMode, setMasterMode] = useState(false); // 'Débutant' ou 'Champion'
   const [answers, setAnswers] = useState([]);
   const [selectedIncorrectAnswers, setSelectedIncorrectAnswers] = useState([]);
+
+  useEffect(() => {
+    const fetchScores = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDocRef = firestore.collection('users').doc(user.uid);
+          const userDoc = await userDocRef.get();
+
+          if (userDoc.exists) {
+            const data = userDoc.data();
+            setBestScore(data.bestScore || 0);
+            setBestChampionScore(data.bestChampionScore || 0);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch scores from Firestore', error);
+      }
+    };
+
+    fetchScores();
+  }, []); // Utilisation de [] pour que cet effet ne s'exécute qu'une seule fois lors du montage
 
   useEffect(() => {
     let interval;
@@ -140,11 +163,57 @@ const PokeQuiz = ({ pokemonData }) => {
     setMasterMode(!masterMode);
   };
 
-  const updateBestScore = () => {
-    if (!masterMode) {
-      setBestScore(score);
-    } else {
-      setBestChampionScore(score);
+  const saveScoresToFirestore = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = firestore.collection('users').doc(user.uid);
+        await userDocRef.set(
+          {
+            bestScore,
+            bestChampionScore,
+          },
+          { merge: true }
+        );
+      }
+    } catch (error) {
+      console.error('Failed to save scores to Firestore', error);
+    }
+  };
+
+  const updateBestScore = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = firestore.collection('users').doc(user.uid);
+        const userDoc = await userDocRef.get();
+        
+        if (userDoc.exists) {
+          const data = userDoc.data();
+          const currentBestScore = data.bestScore || 0;
+          const currentBestChampionScore = data.bestChampionScore || 0;
+  
+          // Comparer les scores et mettre à jour seulement si le nouveau score est supérieur
+          if (!masterMode && score > currentBestScore) {
+            setBestScore(score);
+            await userDocRef.set({ bestScore: score }, { merge: true });
+          } else if (masterMode && score > currentBestChampionScore) {
+            setBestChampionScore(score);
+            await userDocRef.set({ bestChampionScore: score }, { merge: true });
+          }
+        } else {
+          // Si le document n'existe pas encore, on crée un nouveau document avec les scores
+          await userDocRef.set(
+            {
+              bestScore: masterMode ? 0 : score,
+              bestChampionScore: masterMode ? score : 0,
+            },
+            { merge: true }
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Failed to update best scores in Firestore', error);
     }
   };
 
@@ -211,4 +280,4 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
   },
-})
+});

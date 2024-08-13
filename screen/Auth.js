@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Image } from 'react-native';
+import { View, TextInput, Text, StyleSheet, Image, TouchableOpacity, KeyboardAvoidingView, Platform, Button } from 'react-native';
 import { auth, firestore } from '../config/firebaseConfig';
-import IconApp from '../assets/icon.png'
+import IconApp from '../assets/icon.png';
 
 const AuthScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -29,8 +29,13 @@ const AuthScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20} // Ajustez ce décalage si nécessaire
+    >
       <Image source={IconApp} style={styles.logo} />
+      <Text style={styles.formTitle}>{isSignUp ? "Inscription" : "Connexion"}</Text>
       <TextInput
         placeholder="Email"
         value={email}
@@ -44,13 +49,15 @@ const AuthScreen = ({ navigation }) => {
         secureTextEntry
         style={styles.input}
       />
-      <Button title={isSignUp ? "Sign Up" : "Sign In"} onPress={handleAuth} />
+      <TouchableOpacity style={styles.button} onPress={handleAuth}>
+        <Text style={styles.buttonText}>{isSignUp ? "S'inscrire" : "Se connecter"}</Text>
+      </TouchableOpacity>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Button
         title={isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
         onPress={() => setIsSignUp(!isSignUp)}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -60,7 +67,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
     alignItems: 'center',
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   logo: {
     width: 200,
@@ -69,14 +76,39 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#adb5bd',
     borderWidth: 1,
+    borderRadius: 5,
     marginBottom: 12,
+    paddingHorizontal: 10,
     width: '100%',
+  },
+  button: {
+    backgroundColor: 'red',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 5,
+    marginVertical: 10,
+    marginBottom: 25,
+    width: 'auto',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    backgroundColor: '#6c757d',
   },
   error: {
     color: 'red',
     marginTop: 10,
+  },
+  formTitle: {
+    fontSize:14,
+    fontWeight:'bold',
+    marginBottom:10,
   },
 });
 
