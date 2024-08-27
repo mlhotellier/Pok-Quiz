@@ -16,7 +16,7 @@ const AuthScreen = ({ navigation }) => {
         const { user } = await auth.createUserWithEmailAndPassword(email, password);
         await firestore.collection('users').doc(user.uid).set({
           email,
-          nickname: '', // Initialisez avec une valeur vide
+          nickname: '',
         });
       } else {
         // Connexion

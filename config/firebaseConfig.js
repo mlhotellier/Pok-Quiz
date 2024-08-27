@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
+import 'firebase/compat/storage';
 import { Platform } from 'react-native';
 
 const firebaseConfig = {
@@ -22,5 +23,6 @@ if (!firebase.apps.length) {
 
 const auth = firebase.auth();
 const firestore = firebase.firestore();
+const storage = firebase.storage();
 
-export { auth, firestore };
+export { auth, firestore, storage };
