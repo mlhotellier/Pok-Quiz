@@ -163,24 +163,6 @@ const PokeQuiz = ({ pokemonData }) => {
     setMasterMode(!masterMode);
   };
 
-  const saveScoresToFirestore = async () => {
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        const userDocRef = firestore.collection('users').doc(user.uid);
-        await userDocRef.set(
-          {
-            bestScore,
-            bestChampionScore,
-          },
-          { merge: true }
-        );
-      }
-    } catch (error) {
-      console.error('Failed to save scores to Firestore', error);
-    }
-  };
-
   const updateBestScore = async () => {
     try {
       const user = auth.currentUser;
