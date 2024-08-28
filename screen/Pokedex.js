@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   name: {
     marginTop: 10,
-    fontSize: 16,
+    fontSize: '14.5em',
     fontWeight: 'bold',
   },
 });
