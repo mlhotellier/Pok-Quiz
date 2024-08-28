@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Image, Text, TouchableOpacity } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -7,6 +7,7 @@ import Pokedex from '../screen/Pokedex';
 import PokemonDetails from '../screen/PokemonDetails';
 import PokeQuiz from '../screen/PokeQuiz';
 import Profile from '../screen/Profile';
+import PokeLigue from '../screen/PokeLigue';
 import { handleSignOut } from '../utils/authUtils';
 import { auth, firestore } from '../config/firebaseConfig';
 
@@ -58,6 +59,11 @@ const CustomDrawerContent = ({ navigation }) => {
           label="Pokédex"
           onPress={() => navigation.navigate('PokedexStack')}
           icon={() => <Icon name="list" size={24} color="black" />}
+        />
+        <DrawerItem
+          label="PokéLigue" // Ajouter cette ligne
+          onPress={() => navigation.navigate('PokeLigue')}
+          icon={() => <Icon name="trophy" size={24} color="black" />}
         />
         <DrawerItem
           label="Mon compte"
@@ -119,6 +125,11 @@ const MainApp = ({ isLoading, pokemonData }) => {
       <Drawer.Screen name="PokedexStack" options={{ title: 'Pokédex' }}>
         {(drawerProps) => <PokedexStack {...drawerProps} pokemonData={pokemonData} isLoading={isLoading} />}
       </Drawer.Screen>
+      <Drawer.Screen
+        name="PokeLigue"
+        component={PokeLigue}
+        options={{ title: 'PokéLigue' }}
+      />
       <Drawer.Screen name="Profile" options={{ title: 'Mon compte' }}>
         {(drawerProps) => <Profile {...drawerProps} pokemonData={pokemonData} isLoading={isLoading} />}
       </Drawer.Screen>

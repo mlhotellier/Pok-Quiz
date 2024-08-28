@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import * as SplashScreen from 'expo-splash-screen';
 import { auth } from './config/firebaseConfig';
 import AuthScreen from './screen/Auth';
 import MainApp from './navigation/MainApp';
