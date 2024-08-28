@@ -6,7 +6,7 @@ import { auth } from './config/firebaseConfig';
 import AuthScreen from './screen/Auth';
 import MainApp from './navigation/MainApp';
 import axios from 'axios';
-import useFonts from './utils/useFonts';  // Assurez-vous que le chemin est correct
+import useFonts from './utils/useFonts';
 
 const Stack = createNativeStackNavigator();
 
