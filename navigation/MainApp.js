@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -6,29 +7,73 @@ import Pokedex from '../screen/Pokedex';
 import PokemonDetails from '../screen/PokemonDetails';
 import PokeQuiz from '../screen/PokeQuiz';
 import Profile from '../screen/Profile';
+import { handleSignOut } from '../utils/authUtils';
+import { auth, firestore } from '../config/firebaseConfig';
 
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
 
-const CustomDrawerContent = ({ navigation, isLoading, pokemonData }) => {
+const CustomDrawerContent = ({ navigation }) => {
+  const [user, setUser] = useState(null);
+  const [nickname, setNickname] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUser(user);
+        const userDocRef = firestore.collection('users').doc(user.uid);
+        userDocRef.get().then((doc) => {
+          if (doc.exists) {
+            const data = doc.data();
+            setNickname(data.nickname || 'No Nickname');
+            setProfileImage(data.profileImage || null);
+          }
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   return (
-    <DrawerContentScrollView>
-      <DrawerItem
-        label="PokeQuiz"
-        onPress={() => navigation.navigate('PokeQuiz')}
-        icon={() => <Icon name="game-controller" size={24} color="black" />}
-      />
-      <DrawerItem
-        label="Pokédex"
-        onPress={() => navigation.navigate('PokedexStack')}
-        icon={() => <Icon name="list" size={24} color="black" />}
-      />
-      <DrawerItem
-        label="PokéProfil"
-        onPress={() => navigation.navigate('Profile')}
-        icon={() => <Icon name="person-circle-outline" size={24} color="black" />}
-      />
-    </DrawerContentScrollView>
+    <View style={{ flex: 1 }}>
+      <DrawerContentScrollView>
+        {/* Profile Header */}
+        <View style={styles.profileContainer}>
+          <Image
+            source={profileImage ? { uri: profileImage } : require('../assets/default-profile.png')}
+            style={styles.profileImage}
+          />
+          <Text style={styles.nickname}>{nickname}</Text>
+        </View>
+
+        {/* Navigation Items */}
+        <DrawerItem
+          label="PokeQuiz"
+          onPress={() => navigation.navigate('PokeQuiz')}
+          icon={() => <Icon name="game-controller" size={24} color="black" />}
+        />
+        <DrawerItem
+          label="Pokédex"
+          onPress={() => navigation.navigate('PokedexStack')}
+          icon={() => <Icon name="list" size={24} color="black" />}
+        />
+        <DrawerItem
+          label="Mon compte"
+          onPress={() => navigation.navigate('Profile')}
+          icon={() => <Icon name="person-circle-outline" size={24} color="black" />}
+        />
+      </DrawerContentScrollView>
+
+      {/* Sign Out Button at the Bottom */}
+      <View style={styles.signOutContainer}>
+        <TouchableOpacity onPress={() => handleSignOut(navigation)} style={styles.signOutButton}>
+          <Icon name="log-out-outline" size={24} color="red" />
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
@@ -47,7 +92,7 @@ const MainApp = ({ isLoading, pokemonData }) => {
   return (
     <Drawer.Navigator
       initialRouteName="PokeQuiz"
-      drawerContent={(drawerProps) => <CustomDrawerContent {...drawerProps} isLoading={isLoading} pokemonData={pokemonData} />}
+      drawerContent={(drawerProps) => <CustomDrawerContent {...drawerProps} />}
       screenOptions={{
         headerStyle: {
           backgroundColor: 'red',
@@ -74,9 +119,52 @@ const MainApp = ({ isLoading, pokemonData }) => {
       <Drawer.Screen name="PokedexStack" options={{ title: 'Pokédex' }}>
         {(drawerProps) => <PokedexStack {...drawerProps} pokemonData={pokemonData} isLoading={isLoading} />}
       </Drawer.Screen>
-      <Drawer.Screen name="Profile" component={Profile} options={{ title: 'Profile' }} />
+      <Drawer.Screen name="Profile" options={{ title: 'Mon compte' }}>
+        {(drawerProps) => <Profile {...drawerProps} pokemonData={pokemonData} isLoading={isLoading} />}
+      </Drawer.Screen>
     </Drawer.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  profileContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 10,
+  },
+  nickname: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  email: {
+    fontSize: 14,
+    color: '#555',
+  },
+  signOutContainer: {
+    paddingVertical: 20,
+    paddingHorizontal:16,
+    marginBottom:30,
+    borderTopWidth: 1,
+    borderColor: '#ccc',
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  signOutText: {
+    fontSize: 16,
+    marginLeft: 8,
+    color: 'red',
+    fontWeight: 'bold',
+  },
+});
 
 export default MainApp;
