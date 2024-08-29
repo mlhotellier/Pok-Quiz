@@ -1,25 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, ImageBackground, TouchableOpacity, Image, Modal, Pressable, FlatList } from 'react-native';
-import { auth, firestore, storage } from '../config/firebaseConfig'; 
+import { auth, firestore, storage } from '../config/firebaseConfig';
+import { handleSignOut } from '../utils/authUtils'; 
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import bgImageHeader from '../assets/bg-profile-header.jpg';
-import { handleSignOut } from '../utils/authUtils';
 import axios from 'axios';
 
 const Profile = ({ navigation }) => {
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
+  const [loadingProfileImage, setLoadingProfileImage] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const [nickname, setNickname] = useState('');
+  const [inputNickname, setInputNickname] = useState(false);
   const [bestScore, setBestScore] = useState(0);
   const [bestChampionScore, setBestChampionScore] = useState(0);
-  const [inputNickname, setInputNickname] = useState(false);
-  const [profileImage, setProfileImage] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [modalVisible, setModalVisible] = useState(false);
   const [pokemonList, setPokemonList] = useState([]);
   const [favoritePokemon, setFavoritePokemon] = useState(null);
   const [modalPokemonVisible, setModalPokemonVisible] = useState(false);
-  const [selectedPokemonId, setSelectedPokemonId] = useState(null); // Ajouté pour suivre le Pokémon sélectionné
+  const [selectedPokemonId, setSelectedPokemonId] = useState(null);
+  const [isUpdatingPokemon, setIsUpdatingPokemon] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -29,12 +31,11 @@ const Profile = ({ navigation }) => {
         const unsubscribeSnapshot = userDocRef.onSnapshot((doc) => {
           if (doc.exists) {
             const data = doc.data();
+            setProfileImage(data.profileImage || null);
             setNickname(data.nickname || '');
             setBestScore(data.bestScore || 0);
             setBestChampionScore(data.bestChampionScore || 0);
-            setProfileImage(data.profileImage || null);
             setFavoritePokemon(data.favoritePokemon || null);
-            setSelectedPokemonId(data.favoritePokemon?.id || null); // Met à jour le Pokémon sélectionné
           } else {
             console.log('No such document!');
           }
@@ -45,15 +46,16 @@ const Profile = ({ navigation }) => {
         });
         return () => unsubscribeSnapshot();
       } else {
+        setUser(null);
         setLoading(false);
       }
     });
-
+  
     return () => unsubscribe();
   }, []);
 
+  // Récuperer la liste des Pokemons avec axios
   useEffect(() => {
-    // Fetch Pokémon data once when the component is mounted
     const fetchPokemonList = async () => {
       try {
         const response = await axios.get('https://pokebuildapi.fr/api/v1/pokemon/limit/151');
@@ -62,10 +64,11 @@ const Profile = ({ navigation }) => {
         console.error('Error fetching Pokémon data:', error);
       }
     };
-
+  
     fetchPokemonList();
   }, []);
 
+  // Change profile image
   const uploadImage = async (uri) => {
     const response = await fetch(uri);
     const blob = await response.blob();
@@ -74,7 +77,41 @@ const Profile = ({ navigation }) => {
     const downloadURL = await snapshot.ref.getDownloadURL();
     return downloadURL;
   };
+  const handleChangeProfileImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        alert('Permission to access camera roll is required!');
+        return;
+      }
+  
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.2,
+      });
+  
+      if (!result.canceled) {
+        setLoadingProfileImage(true); // Commencez par activer l'indicateur de chargement
+        const profileImageUrl = await uploadImage(result.assets[0].uri); // Téléchargez l'image sur Firebase Storage
+  
+        await firestore.collection('users').doc(user.uid).set({
+          profileImage: profileImageUrl
+        }, { merge: true });
+  
+        setProfileImage(profileImageUrl); // Mettez à jour l'état local avec l'URL de l'image téléchargée
+        setLoadingProfileImage(false); // Désactivez l'indicateur de chargement
+        alert('Profile image updated!');
+      }
+    } catch (error) {
+      setLoadingProfileImage(false);
+      console.error('Error updating profile image:', error);
+      alert('There was an error updating your profile image. Please try again.');
+    }
+  };
 
+  // Change nickname
   const handleSaveNickname = async () => {
     if (nickname.trim() === '') {
       alert('Nickname cannot be empty.');
@@ -88,95 +125,110 @@ const Profile = ({ navigation }) => {
       setInputNickname(false);
     }
   };
-
-  const handleSaveProfileImage = async () => {
-    if (profileImage && !profileImage.startsWith('http')) {
-      const profileImageUrl = await uploadImage(profileImage);
-      await firestore.collection('users').doc(user.uid).set({
-        profileImage: profileImageUrl
-      }, { merge: true });
-      alert('Profile image updated!');
-    }
-  };
-
   const handleEditNickname = () => {
     setInputNickname(true);
   };
 
-  const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      alert('Permission to access camera roll is required!');
+  // Change favorite pokemon  
+  const updateUserData = async (userId, data) => {
+    try {
+      await firestore.collection('users').doc(userId).set(data, { merge: true });
+    } catch (error) {
+      console.error("Error updating document:", error);
+    }
+  };  
+  const handleSelectPokemon = async (pokemon) => {
+    if (!pokemon || !pokemon.name || !pokemon.image) {
+      console.error('Invalid Pokémon data');
       return;
     }
-
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
-      await handleSaveProfileImage();
-    }
-  };
-
-  const handleSelectPokemon = async (pokemon) => {
+  
     try {
+      setIsUpdatingPokemon(true); // Activer le loader
+  
       const selectedPokemon = {
-        id: pokemon.id, // Assurez-vous d'inclure l'ID
+        id: pokemon.id,
         name: pokemon.name,
-        image: pokemon.image, // Utilise l'URL de l'image
+        image: pokemon.image,
       };
   
+      // Mise à jour de l'état local
       setFavoritePokemon(selectedPokemon);
-      setSelectedPokemonId(selectedPokemon.id); // Met à jour l'ID du Pokémon sélectionné
-  
-      await firestore.collection('users').doc(user.uid).set({
-        favoritePokemon: selectedPokemon
-      }, { merge: true });
+      setSelectedPokemonId(pokemon.id);
   
       setModalPokemonVisible(false);
+      // Mise à jour Firestore
+      await updateUserData(user.uid, { favoritePokemon: selectedPokemon });
+  
+      setIsUpdatingPokemon(false);
+  
+      alert('Your favorite pokemon has been updated!');
     } catch (error) {
       console.error('Error selecting Pokémon:', error);
+      setIsUpdatingPokemon(false);
     }
   };
 
+  // Loader
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return <ActivityIndicator size="large" color="#878787" />;
   }
 
   return (
     <>
+      {/* Header */}
       <View style={styles.header}>
         <ImageBackground source={bgImageHeader} style={styles.bgImage}>
           <View style={styles.profileImageContainer}>
             <TouchableOpacity onPress={() => setModalVisible(true)}>
-              <Image
-                source={profileImage ? { uri: profileImage } : require('../assets/default-profile.png')}
-                style={styles.profileImage}
-              />
+              <View style={styles.profileImageWrapper}>
+                <Image
+                  source={profileImage ? { uri: profileImage } : require('../assets/default-profile.png')}
+                  style={styles.profileImage}
+                />
+                {loadingProfileImage && (
+                  <ActivityIndicator size="small" color="#ffffff" style={styles.activityIndicator} />
+                )}
+              </View>
             </TouchableOpacity>
-            <TouchableOpacity onPress={pickImage} style={styles.editIcon}>
+
+            <TouchableOpacity onPress={handleChangeProfileImage} style={styles.editIcon}>
               <Icon name="pencil" size={24} color="#000" />
             </TouchableOpacity>
           </View>
         </ImageBackground>
       </View>
 
+      {/* Header Modal pour afficher l'image en grand */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
+          <Image
+            source={profileImage ? { uri: profileImage } : require('../assets/default-profile.png')}
+            style={styles.modalImage}
+          />
+        </Pressable>
+      </Modal>
+
+        {/* Main content  */}
       <View style={styles.container}>
-        <View style={styles.main}>
-          {nickname === '' ? 
+        {/* Nickname */}
+        <View style={styles.labelInput}>
+          {nickname === '' & !inputNickname ? 
             <TouchableOpacity onPress={handleEditNickname}>
               <Text>Choose a nickname</Text>
             </TouchableOpacity> 
             : null
           }
-
-          {inputNickname ? <Text>Choose your nickname</Text> : null}
-          <View style={styles.nicknameContainer}>
+          {inputNickname ? 
+            <Text>Choose a nickname</Text> 
+            : null
+          }
+        </View>
+        <View style={styles.nicknameContainer}>
             {inputNickname ? (
               <>
                 <TextInput
@@ -190,59 +242,61 @@ const Profile = ({ navigation }) => {
                 </TouchableOpacity>
               </>
             ) : (
-              <Text style={styles.welcomeText}>
-                Welcome <Text style={{ fontSize: 19, color: 'red', fontFamily: 'pokemon-solid', letterSpacing: 1.2 }}>{nickname}</Text> !
-                {nickname === '' ? null : 
-                  <View style={styles.modifyNickname}>
-                    <TouchableOpacity onPress={handleEditNickname} style={styles.iconButton}>
-                      <Icon name="pencil" size={14} color="#000" />
-                    </TouchableOpacity>
-                  </View>
+              <>
+                <Text style={styles.welcomeText}>
+                  Welcome <Text style={styles.nickname}>{nickname}</Text> !
+                </Text>
+                {nickname === '' ? null :
+                  <TouchableOpacity onPress={handleEditNickname} style={styles.iconButton}>
+                    <Icon name="pencil" size={14} color="#000" />
+                  </TouchableOpacity>
                 }
-              </Text>
+              </>
             )}
-          </View>
-          <Text style={styles.emailText}>Email: {user?.email}</Text>
-          <View style={styles.bestScoreSection}>
-            <Text style={styles.bestScoreSectionTitle}>Your personal best score</Text>
+        </View>
+
+        {/*  Bestscore */}
+        <View style={styles.bestScoreSection}>
+            <Text style={styles.bestScoreSectionTitle}>your personal best score</Text>
             <View style={styles.bestScore}>
-              <View style={{ flexDirection: 'column', width: '50%' }}>
-                <Text style={{ textAlign: 'center' }}>Best Débutant:</Text>
-                <Text style={{ textAlign: 'center', fontSize: 32, fontWeight: 'bold' }}>{bestScore}</Text>
+              <View style={styles.bestScoreMode}>
+                <Text>Best Débutant:</Text>
+                <Text style={styles.bestScoreText}>{bestScore}</Text>
               </View>
-              <View style={{ flexDirection: 'column', width: '50%' }}>
-                <Text style={{ textAlign: 'center' }}>Best Champion:</Text>
-                <Text style={{ textAlign: 'center', fontSize: 32, fontWeight: 'bold' }}>{bestChampionScore}</Text>
+              <View style={styles.bestScoreMode}>
+                <Text>Best Champion:</Text>
+                <Text style={styles.bestScoreText}>{bestChampionScore}</Text>
               </View>
             </View>
-          </View>
-          <View style={styles.favoritePokemonSection}>
-            <Text style={styles.favoritePokemonText}>Favorite Pokémon:</Text>
-            {favoritePokemon ? (
-              <View style={styles.favoritePokemonContainer}>
+        </View>
+        
+        {/*  Favorite Pokemon */}
+        <View style={styles.favoritePokemonSection}>
+          <Text style={styles.favoritePokemonText}>
+            your favorite Pokémon is <Text style={{ color: 'red' }}> {favoritePokemon?.name}</Text>
+          </Text>
+          {favoritePokemon ? (
+            <View style={styles.favoritePokemonContainer}>
+              {isUpdatingPokemon ? (
+                <ActivityIndicator size="small" color="#a9a9a9" style={styles.pokemonLoader} />
+              ) : (
                 <Image
                   source={{ uri: favoritePokemon.image }}
                   style={styles.favoritePokemonImage}
                 />
-                <TouchableOpacity onPress={() => setModalPokemonVisible(true)} style={styles.editFavoritePokemonIcon}>
-                  <Icon name="pencil" size={24} color="#000" />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={{flexDirection:'row'}}>
-                <Text>No favorite Pokémon selected</Text>
-                <TouchableOpacity onPress={() => setModalPokemonVisible(true)} style={{position:'relative',top:-5,right:-5,backgroundColor: 'white',borderRadius: 20,padding: 5,borderWidth: 1,borderColor: 'grey',}}>
-                  <Icon name="pencil" size={15} color="#000" />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.footer}>
-          <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-            <Text style={styles.signOutButtonText}>Sign Out</Text>
-          </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={() => setModalPokemonVisible(true)} style={styles.editFavoritePokemonIcon}>
+                <Icon name="pencil" size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row' }}>
+              <Text>No favorite Pokémon selected</Text>
+              <TouchableOpacity onPress={() => setModalPokemonVisible(true)} style={styles.editIcon}>
+                <Icon name="pencil" size={15} color="#000" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Modal pour choisir un Pokémon favori */}
@@ -277,26 +331,19 @@ const Profile = ({ navigation }) => {
           </Pressable>
         </Modal>
 
-        {/* Modal pour afficher l'image en grand */}
-        <Modal
-          visible={modalVisible}
-          transparent={true}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <Pressable style={styles.modalBackground} onPress={() => setModalVisible(false)}>
-            <Image
-              source={profileImage ? { uri: profileImage } : require('../assets/default-profile.png')}
-              style={styles.modalImage}
-            />
-          </Pressable>
-        </Modal>
+      </View>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <TouchableOpacity onPress={() => handleSignOut(navigation)} style={styles.signOutButton}>
+          <Text style={styles.signOutButtonText}>Sign Out</Text>
+        </TouchableOpacity>
       </View>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  // Styles pour le header
   header: {
     alignItems: 'center',
   },
@@ -307,13 +354,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
   },
-  profileImage: {
-    borderWidth: 2,
-    borderColor: '#f2f2f2',
-    position: 'relative',
+    profileImageWrapper: {
     width: 200,
     height: 200,
     borderRadius: 100,
+    borderWidth: 3,
+    borderColor: '#f2f2f2',
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 50,
+  },
+  activityIndicator: {
+    position: 'absolute',
   },
   editIcon: {
     position: 'absolute',
@@ -325,37 +382,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'grey',
   },
-
-  // Styles pour le conteneur principal
   container: {
     justifyContent: 'center',
-    padding: 16,
-  },
-  main: {
-    alignItems: 'center',
-    marginBottom: 20,
+    paddingHorizontal: 16,
+    marginVertical:8,
   },
   nicknameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignItems:'center',
+    flexDirection:'row',
+    justifyContent:'center',
   },
   welcomeText: {
+    position:'relative',
     fontSize: 24,
+    marginHorizontal:10,
     fontWeight: 'bold',
   },
-  emailText: {
-    fontSize: 16,
-    color: '#555',
-    marginTop: 8,
+  nickname: {
+    fontSize: 20,
+    color: 'red',
+    fontFamily: 'pokemon-classic',
+    letterSpacing: 1.1,
   },
   iconButton: {
-    borderRadius: 25,
+    padding: 3,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 5,
     borderWidth: 1,
     borderColor: 'grey',
-    padding: 2,
   },
-  modifyNickname: {
-    paddingLeft: 10,
+  labelInput: {
+    alignItems:'center',
+    marginVertical:6
   },
   input: {
     height: 35,
@@ -368,27 +427,107 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: '#4CAF50',
-    padding: 10,
+    paddingHorizontal: 10,
+    justifyContent:'center',
+    height: 35,
     borderRadius: 5,
   },
   saveButtonText: {
     color: '#fff',
+    fontWeight:'500',
     fontSize: 16,
   },
   bestScoreSection: {
+    backgroundColor:'#F3F6F7',
+    borderColor:'#ececec',
+    borderWidth:1,
     alignItems: 'center',
-    marginVertical: 15,
-    width: '100%',
+    marginTop:20,
+    marginVertical: 10,
+    padding:10,
+    borderRadius:10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
   },
   bestScoreSectionTitle: {
     fontWeight: 'bold',
-    fontSize: 18,
-    marginBottom: 10,
+    fontSize: 20,
+    marginVertical: 5,
+    fontFamily:'pokemon-classic',
   },
   bestScore: {
-    marginVertical: 5,
+    marginVertical: 10,
     flexDirection: 'row',
     justifyContent: 'space-around',
+  },
+  bestScoreMode: {
+    flexDirection: 'column',
+    width: '50%',
+    justifyContent:'center',
+    alignItems:'center'
+  },
+  bestScoreText: {
+    fontWeight:'bold',
+    fontSize:35,
+  },
+  favoritePokemonSection: {
+    backgroundColor:'#F3F6F7',
+    borderColor:'#ececec',
+    borderWidth:1,
+    alignItems: 'center',
+    marginVertical: 10,
+    paddingBottom:8,
+    borderRadius:10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  favoritePokemonText: {
+    marginVertical: 10,
+    fontFamily:'pokemon-classic',
+    fontWeight: 'bold',
+    fontSize: 20,
+  },
+  pokemonLoader: {
+    width: 120,
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  favoritePokemonContainer: {
+    alignItems: 'center',
+    width: '100%',
+    position: 'relative',
+  },
+  favoritePokemonImage: {
+    width: 120,
+    height: 120,
+    shadowColor: "#FFE894",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.75,
+    shadowRadius: 8,
+  },
+  editFavoritePokemonIcon: {
+    position: 'absolute',
+    top: 5,
+    right: 30,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 5,
+    borderWidth: 1,
+    borderColor: 'grey',
   },
   footer: {
     alignItems: 'center',
@@ -427,6 +566,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
   },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalImage: {
+    width: 350,
+    height: 350,
+    borderRadius: 10,
+    resizeMode: 'contain',
+  },
   pokemonItem: {
     paddingVertical: 10,
     paddingHorizontal: 15,
@@ -440,56 +591,6 @@ const styles = StyleSheet.create({
   selectedPokemonName: {
     fontWeight: 'bold',
     color: 'red',
-  },
-  modalBackground: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalImage: {
-    width: 350,
-    height: 350,
-    borderRadius: 10,
-    resizeMode: 'contain',
-  },
-  favoritePokemonSection: {
-    marginVertical: 20,
-    alignItems: 'center',
-  },
-  favoritePokemonText: {
-    fontSize: 16,
-    marginVertical: 10,
-    fontWeight: 'bold',
-  },
-  favoritePokemonContainer: {
-    alignItems: 'center',
-    width: '100%',
-    position: 'relative',
-  },
-  favoritePokemonImage: {
-    width: 120,
-    height: 120,
-  },
-  editFavoritePokemonIcon: {
-    position: 'absolute',
-    top: 0,
-    right: -25,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 5,
-    borderWidth: 1,
-    borderColor: 'grey',
-  },
-  choosePokemonButton: {
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: '#4CAF50',
-    marginTop: 10,
-  },
-  choosePokemonButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
   },
 });
 

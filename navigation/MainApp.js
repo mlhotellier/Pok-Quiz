@@ -18,29 +18,52 @@ const CustomDrawerContent = ({ navigation }) => {
   const [user, setUser] = useState(null);
   const [nickname, setNickname] = useState('');
   const [profileImage, setProfileImage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setUser(user);
         const userDocRef = firestore.collection('users').doc(user.uid);
-        userDocRef.get().then((doc) => {
-          if (doc.exists) {
-            const data = doc.data();
-            setNickname(data.nickname || 'No Nickname');
-            setProfileImage(data.profileImage || null);
-          }
-        });
+        userDocRef.get()
+          .then((doc) => {
+            if (doc.exists) {
+              const data = doc.data();
+              setNickname(data.nickname || 'No Nickname');
+              setProfileImage(data.profileImage || null);
+            } else {
+              setError('No such document!');
+            }
+            setLoading(false);
+          })
+          .catch((err) => {
+            setError('Error getting document: ' + err.message);
+            setLoading(false);
+          });
+      } else {
+        // Réinitialisez les états lorsque l'utilisateur est déconnecté
+        setUser(null);
+        setNickname('');
+        setProfileImage(null);
+        setLoading(false);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
+  if (loading) {
+    return <Text>Loading...</Text>;
+  }
+
+  if (error) {
+    return <Text>Error: {error}</Text>;
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <DrawerContentScrollView>
-        {/* Profile Header */}
         <View style={styles.profileContainer}>
           <Image
             source={profileImage ? { uri: profileImage } : require('../assets/default-profile.png')}
@@ -49,7 +72,6 @@ const CustomDrawerContent = ({ navigation }) => {
           <Text style={styles.nickname}>{nickname}</Text>
         </View>
 
-        {/* Navigation Items */}
         <DrawerItem
           label="PokeQuiz"
           onPress={() => navigation.navigate('PokeQuiz')}
@@ -61,7 +83,7 @@ const CustomDrawerContent = ({ navigation }) => {
           icon={() => <Icon name="list" size={24} color="black" />}
         />
         <DrawerItem
-          label="PokéLigue" // Ajouter cette ligne
+          label="PokéLigue"
           onPress={() => navigation.navigate('PokeLigue')}
           icon={() => <Icon name="trophy" size={24} color="black" />}
         />
@@ -72,7 +94,6 @@ const CustomDrawerContent = ({ navigation }) => {
         />
       </DrawerContentScrollView>
 
-      {/* Sign Out Button at the Bottom */}
       <View style={styles.signOutContainer}>
         <TouchableOpacity onPress={() => handleSignOut(navigation)} style={styles.signOutButton}>
           <Icon name="log-out-outline" size={24} color="red" />
@@ -161,8 +182,8 @@ const styles = StyleSheet.create({
   },
   signOutContainer: {
     paddingVertical: 20,
-    paddingHorizontal:16,
-    marginBottom:30,
+    paddingHorizontal: 16,
+    marginBottom: 30,
     borderTopWidth: 1,
     borderColor: '#ccc',
   },
