@@ -66,10 +66,10 @@ const CustomDrawerContent = ({ navigation }) => {
       <DrawerContentScrollView>
         <View style={styles.profileContainer}>
           <Image
-            source={profileImage ? { uri: profileImage } : require('../assets/default-profile.png')}
+            source={require('../assets/default-profile.png')}
             style={styles.profileImage}
           />
-          <Text style={styles.nickname}>{nickname}</Text>
+          {/* <Text style={styles.nickname}>{nickname}</Text> */}
         </View>
 
         <DrawerItem
