@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, StyleSheet, Image, Text, TouchableOpacity } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -9,56 +9,16 @@ import PokeQuiz from '../screen/PokeQuiz';
 import Profile from '../screen/Profile';
 import PokeLigue from '../screen/PokeLigue';
 import { handleSignOut } from '../utils/authUtils';
-import { auth, firestore } from '../config/firebaseConfig';
+import { UserContext } from '../context/UserContext';
 
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
 
 const CustomDrawerContent = ({ navigation }) => {
-  const [user, setUser] = useState(null);
-  const [nickname, setNickname] = useState('');
-  const [profileImage, setProfileImage] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        setUser(user);
-        const userDocRef = firestore.collection('users').doc(user.uid);
-        userDocRef.get()
-          .then((doc) => {
-            if (doc.exists) {
-              const data = doc.data();
-              setNickname(data.nickname || 'No Nickname');
-              setProfileImage(data.profileImage || null);
-            } else {
-              setError('No such document!');
-            }
-            setLoading(false);
-          })
-          .catch((err) => {
-            setError('Error getting document: ' + err.message);
-            setLoading(false);
-          });
-      } else {
-        // Réinitialisez les états lorsque l'utilisateur est déconnecté
-        setUser(null);
-        setNickname('');
-        setProfileImage(null);
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
+  const { profileData, loading } = useContext(UserContext);
+  
   if (loading) {
     return <Text>Loading...</Text>;
-  }
-
-  if (error) {
-    return <Text>Error: {error}</Text>;
   }
 
   return (
@@ -66,10 +26,10 @@ const CustomDrawerContent = ({ navigation }) => {
       <DrawerContentScrollView>
         <View style={styles.profileContainer}>
           <Image
-            source={require('../assets/default-profile.png')}
+            source={profileData?.profileImage ? { uri: profileData.profileImage } : require('../assets/default-profile.png')}
             style={styles.profileImage}
           />
-          {/* <Text style={styles.nickname}>{nickname}</Text> */}
+          <Text style={styles.nickname}>{profileData?.nickname || 'No Nickname'}</Text>
         </View>
 
         <DrawerItem

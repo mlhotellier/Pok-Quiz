@@ -1,58 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, ImageBackground, TouchableOpacity, Image, Modal, Pressable, FlatList } from 'react-native';
-import { auth, firestore, storage } from '../config/firebaseConfig';
+import { firestore, storage } from '../config/firebaseConfig';
 import { handleSignOut } from '../utils/authUtils'; 
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import bgImageHeader from '../assets/bg-profile-header.jpg';
 import axios from 'axios';
+import { useUser } from '../context/UserContext';
 
 const Profile = ({ navigation }) => {
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  const [profileImage, setProfileImage] = useState(null);
+  const { user, profileData, setProfileData, loading } = useUser();
+  const uid = user?._delegate.uid;
+  const [profileImage, setProfileImage] = useState(profileData.profileImage);
   const [loadingProfileImage, setLoadingProfileImage] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [nickname, setNickname] = useState('');
+  const [nickname, setNickname] = useState(profileData.nickname);
   const [inputNickname, setInputNickname] = useState(false);
-  const [bestScore, setBestScore] = useState(0);
-  const [bestChampionScore, setBestChampionScore] = useState(0);
+  const [bestScore, setBestScore] = useState(profileData.bestScore);
+  const [bestChampionScore, setBestChampionScore] = useState(profileData.bestChampionScore);
   const [pokemonList, setPokemonList] = useState([]);
-  const [favoritePokemon, setFavoritePokemon] = useState(null);
+  const [favoritePokemon, setFavoritePokemon] = useState(profileData.favoritePokemon);
   const [modalPokemonVisible, setModalPokemonVisible] = useState(false);
-  const [selectedPokemonId, setSelectedPokemonId] = useState(null);
+  const [selectedPokemonId, setSelectedPokemonId] = useState(favoritePokemon?.id || null);
   const [isUpdatingPokemon, setIsUpdatingPokemon] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        setUser(user);
-        const userDocRef = firestore.collection('users').doc(user.uid);
-        const unsubscribeSnapshot = userDocRef.onSnapshot((doc) => {
-          if (doc.exists) {
-            const data = doc.data();
-            setProfileImage(data.profileImage || null);
-            setNickname(data.nickname || '');
-            setBestScore(data.bestScore || 0);
-            setBestChampionScore(data.bestChampionScore || 0);
-            setFavoritePokemon(data.favoritePokemon || null);
-          } else {
-            console.log('No such document!');
-          }
-          setLoading(false);
-        }, (error) => {
-          console.error("Error getting document:", error);
-          setLoading(false);
-        });
-        return () => unsubscribeSnapshot();
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
-    });
-  
-    return () => unsubscribe();
-  }, []);
+    setProfileImage(profileData.profileImage);
+    setNickname(profileData.nickname);
+    setBestScore(profileData.bestScore);
+    setBestChampionScore(profileData.bestChampionScore);
+    setFavoritePokemon(profileData.favoritePokemon);
+  }, [profileData]);
 
   // Récuperer la liste des Pokemons avec axios
   useEffect(() => {
@@ -72,7 +50,7 @@ const Profile = ({ navigation }) => {
   const uploadImage = async (uri) => {
     const response = await fetch(uri);
     const blob = await response.blob();
-    const ref = storage.ref().child(`profileImages/${user.uid}`);
+    const ref = storage.ref().child(`profileImages/${uid}`);
     const snapshot = await ref.put(blob);
     const downloadURL = await snapshot.ref.getDownloadURL();
     return downloadURL;
@@ -95,10 +73,12 @@ const Profile = ({ navigation }) => {
       if (!result.canceled) {
         setLoadingProfileImage(true); // Commencez par activer l'indicateur de chargement
         const profileImageUrl = await uploadImage(result.assets[0].uri); // Téléchargez l'image sur Firebase Storage
-  
-        await firestore.collection('users').doc(user.uid).set({
+        await firestore.collection('users').doc(uid).set({
           profileImage: profileImageUrl
         }, { merge: true });
+
+        // Mettre à jour le contexte
+        setProfileData(prevData => ({ ...prevData, profileImage: profileImageUrl }));
   
         setProfileImage(profileImageUrl); // Mettez à jour l'état local avec l'URL de l'image téléchargée
         setLoadingProfileImage(false); // Désactivez l'indicateur de chargement
@@ -118,9 +98,11 @@ const Profile = ({ navigation }) => {
       return;
     }
     if (user) {
-      await firestore.collection('users').doc(user.uid).set({
+      await firestore.collection('users').doc(uid).set({
         nickname
       }, { merge: true });
+
+      setProfileData(prevData => ({ ...prevData, nickname }));
       alert('Nickname updated!');
       setInputNickname(false);
     }
@@ -129,14 +111,7 @@ const Profile = ({ navigation }) => {
     setInputNickname(true);
   };
 
-  // Change favorite pokemon  
-  const updateUserData = async (userId, data) => {
-    try {
-      await firestore.collection('users').doc(userId).set(data, { merge: true });
-    } catch (error) {
-      console.error("Error updating document:", error);
-    }
-  };  
+  // Change favorite pokemon    
   const handleSelectPokemon = async (pokemon) => {
     if (!pokemon || !pokemon.name || !pokemon.image) {
       console.error('Invalid Pokémon data');
@@ -155,17 +130,25 @@ const Profile = ({ navigation }) => {
       // Mise à jour de l'état local
       setFavoritePokemon(selectedPokemon);
       setSelectedPokemonId(pokemon.id);
-  
       setModalPokemonVisible(false);
+      
       // Mise à jour Firestore
       await updateUserData(user.uid, { favoritePokemon: selectedPokemon });
-  
       setIsUpdatingPokemon(false);
-  
       alert('Your favorite pokemon has been updated!');
     } catch (error) {
       console.error('Error selecting Pokémon:', error);
       setIsUpdatingPokemon(false);
+    }
+  };
+
+
+  const updateUserData = async (userId, data) => {
+    try {
+      await firestore.collection('users').doc(userId).set(data, { merge: true });
+      
+    } catch (error) {
+      console.error("Error updating document:", error);
     }
   };
 

@@ -1,30 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { auth } from './config/firebaseConfig';
 import AuthScreen from './screen/Auth';
 import MainApp from './navigation/MainApp';
 import axios from 'axios';
 import useFonts from './utils/useFonts';
+import { UserProvider, useUser } from './context/UserContext';
 
 const Stack = createNativeStackNavigator();
 
-const App = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [pokemonData, setPokemonData] = useState([]);
-  const [user, setUser] = useState(null);
+const AppContent = () => {
+  const { user, loading: userLoading } = useUser();
+  const [pokemonData, setPokemonData] = React.useState([]);
   const fontsLoaded = useFonts();
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      setUser(user);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
+  React.useEffect(() => {
     if (user) {
       fetchData();
     }
@@ -39,7 +29,7 @@ const App = () => {
     }
   };
 
-  if (!fontsLoaded || isLoading) {
+  if (!fontsLoaded || userLoading) {
     return null;  // Vous pouvez retourner un écran de chargement ici si nécessaire
   }
 
@@ -48,11 +38,17 @@ const App = () => {
       <Stack.Navigator initialRouteName={user ? "MainApp" : "Auth"}>
         <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: false }} />
         <Stack.Screen name="MainApp" options={{ headerShown: false }}>
-          {(props) => <MainApp {...props} isLoading={isLoading} pokemonData={pokemonData} />}
+          {(props) => <MainApp {...props} isLoading={userLoading} pokemonData={pokemonData} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   );
 };
+
+const App = () => (
+  <UserProvider>
+    <AppContent />
+  </UserProvider>
+);
 
 export default App;
