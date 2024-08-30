@@ -133,7 +133,7 @@ const Profile = ({ navigation }) => {
       setModalPokemonVisible(false);
       
       // Mise à jour Firestore
-      await updateUserData(user.uid, { favoritePokemon: selectedPokemon });
+      await updateUserData(uid, { favoritePokemon: selectedPokemon });
       setIsUpdatingPokemon(false);
       alert('Your favorite pokemon has been updated!');
     } catch (error) {

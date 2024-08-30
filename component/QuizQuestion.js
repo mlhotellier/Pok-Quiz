@@ -53,7 +53,6 @@ const QuizQuestion = ({
             onChangeText={handleInputChange}
             value={userInput}
             placeholder="Nom du Pokémon"
-            autoCapitalize="none"
           />
           <TouchableOpacity style={styles.checkButton} onPress={() => handleCheckAnswer(userInput)}>
             <Text style={styles.checkButtonText}>Vérifier</Text>
@@ -132,7 +131,7 @@ const styles = StyleSheet.create({
   optionButtonText: {
     color: '#222222',
     textTransform:'uppercase',
-    fontSize: 18,
+    fontSize: '15.2em',
     fontWeight: 'bold',
     textAlign: 'center',
   },

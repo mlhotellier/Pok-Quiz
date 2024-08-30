@@ -8,7 +8,6 @@ import { useUser } from '../context/UserContext';
 
 const PokeQuiz = ({ pokemonData }) => {
   const { profileData, setProfileData, loading } = useUser();
-  console.log('PokeQuiz',profileData)
   const timeQuiz = 60; // Temps initial pour le quiz en secondes
   const [userInput, setUserInput] = useState('');
   const [randomPokemon, setRandomPokemon] = useState(null);
@@ -63,7 +62,6 @@ const PokeQuiz = ({ pokemonData }) => {
   }, [quizStarted]);
 
   useEffect(() => {
-    console.log('Profile data updated:', profileData);
     setBestScore(profileData.bestScore);
     setBestChampionScore(profileData.bestChampionScore);
   }, [profileData]);
