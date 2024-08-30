@@ -4,22 +4,26 @@ import QuizEndScreen from '../component/QuizEndScreen';
 import QuizQuestion from '../component/QuizQuestion';
 import { View, StyleSheet } from 'react-native';
 import { auth, firestore } from '../config/firebaseConfig';
+import { useUser } from '../context/UserContext';
 
 const PokeQuiz = ({ pokemonData }) => {
+  const { profileData, setProfileData, loading } = useUser();
+  console.log('PokeQuiz',profileData)
   const timeQuiz = 60; // Temps initial pour le quiz en secondes
   const [userInput, setUserInput] = useState('');
   const [randomPokemon, setRandomPokemon] = useState(null);
   const [quizStarted, setQuizStarted] = useState(false);
   const [timer, setTimer] = useState(timeQuiz);
   const [score, setScore] = useState(0);
-  const [bestScore, setBestScore] = useState(0);
-  const [bestChampionScore, setBestChampionScore] = useState(0);
+  const [bestScore, setBestScore] = useState(profileData.bestScore);
+  const [bestChampionScore, setBestChampionScore] = useState(profileData.bestChampionScore);
   const [quizEnded, setQuizEnded] = useState(false);
   const [inputError, setInputError] = useState(false);
   const [masterMode, setMasterMode] = useState(false); // 'Débutant' ou 'Champion'
   const [answers, setAnswers] = useState([]);
   const [selectedIncorrectAnswers, setSelectedIncorrectAnswers] = useState([]);
 
+  
   useEffect(() => {
     const fetchScores = async () => {
       try {
@@ -58,6 +62,12 @@ const PokeQuiz = ({ pokemonData }) => {
     return () => clearInterval(interval);
   }, [quizStarted]);
 
+  useEffect(() => {
+    console.log('Profile data updated:', profileData);
+    setBestScore(profileData.bestScore);
+    setBestChampionScore(profileData.bestChampionScore);
+  }, [profileData]);
+  
   const startQuiz = () => {
     const random = pokemonData[Math.floor(Math.random() * pokemonData.length)];
     setRandomPokemon(random);
@@ -170,6 +180,8 @@ const PokeQuiz = ({ pokemonData }) => {
         const userDocRef = firestore.collection('users').doc(user.uid);
         const userDoc = await userDocRef.get();
         
+        let updates = {};
+
         if (userDoc.exists) {
           const data = userDoc.data();
           const currentBestScore = data.bestScore || 0;
@@ -178,20 +190,38 @@ const PokeQuiz = ({ pokemonData }) => {
           // Comparer les scores et mettre à jour seulement si le nouveau score est supérieur
           if (!masterMode && score > currentBestScore) {
             setBestScore(score);
-            await userDocRef.set({ bestScore: score }, { merge: true });
+            //await userDocRef.set({ bestScore: score }, { merge: true });
+            updates.bestScore = score;
           } else if (masterMode && score > currentBestChampionScore) {
             setBestChampionScore(score);
-            await userDocRef.set({ bestChampionScore: score }, { merge: true });
+            //await userDocRef.set({ bestChampionScore: score }, { merge: true });
+            updates.bestChampionScore = score;
+          }
+
+          if (Object.keys(updates).length > 0) {
+            // Mettre à jour Firestore
+            await userDocRef.set(updates, { merge: true });
+  
+            // Mettre à jour le contexte utilisateur
+            setProfileData((prevProfile) => ({
+              ...prevProfile,
+              ...updates,
+            }));
           }
         } else {
           // Si le document n'existe pas encore, on crée un nouveau document avec les scores
-          await userDocRef.set(
-            {
-              bestScore: masterMode ? 0 : score,
-              bestChampionScore: masterMode ? score : 0,
-            },
-            { merge: true }
-          );
+          const newScores = {
+            bestScore: masterMode ? 0 : score,
+            bestChampionScore: masterMode ? score : 0,
+          };
+
+          await userDocRef.set(newScores, { merge: true });
+
+          // Mettre à jour le contexte utilisateur
+          setProfileData((prevProfile) => ({
+            ...prevProfile,
+            ...newScores,
+          }));
         }
       }
     } catch (error) {

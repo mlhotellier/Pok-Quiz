@@ -6,6 +6,7 @@ import MainApp from './navigation/MainApp';
 import axios from 'axios';
 import useFonts from './utils/useFonts';
 import { UserProvider, useUser } from './context/UserContext';
+import LoadingScreen from './component/LoadingScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,7 +31,7 @@ const AppContent = () => {
   };
 
   if (!fontsLoaded || userLoading) {
-    return null;  // Vous pouvez retourner un écran de chargement ici si nécessaire
+    return <LoadingScreen />;  // Vous pouvez retourner un écran de chargement ici si nécessaire
   }
 
   return (

@@ -23,15 +23,14 @@ export const UserProvider = ({ children }) => {
           if (userDoc.exists) {
             const userData = userDoc.data();
             setUser({ ...authUser, ...userData });
-            setProfileData(userData); // Mettez à jour profileData avec les données récupérées
+            setProfileData(userData);
           } else {
             console.log('No user data found for:', authUser.uid);
-            setUser(authUser); // Utilisateur connecté sans données supplémentaires
+            setUser(authUser);
           }
         } catch (error) {
           console.error('Error fetching user data: ', error);
-          console.log('User connected:', authUser);
-          setUser(authUser); // Utilisateur connecté sans données supplémentaires
+          setUser(authUser);
         }
       } else {
         console.log('User not connected');
@@ -43,7 +42,7 @@ export const UserProvider = ({ children }) => {
           bestScore: 0,
           bestChampionScore: 0,
           favoritePokemon: null,
-        }); // Réinitialisez profileData lorsque l'utilisateur se déconnecte
+        });
       }
       setLoading(false);
     });
