@@ -15,8 +15,12 @@ const AuthScreen = ({ navigation }) => {
         // Inscription
         const { user } = await auth.createUserWithEmailAndPassword(email, password);
         await firestore.collection('users').doc(user.uid).set({
-          email,
+          id: user.uid,
+          profileImage: null,
           nickname: '',
+          bestScore: 0,
+          bestChampionScore: 0,
+          favoritePokemon: null,
         });
       } else {
         // Connexion
@@ -40,6 +44,7 @@ const AuthScreen = ({ navigation }) => {
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
+        autoCapitalize='none'
         style={styles.input}
       />
       <TextInput
