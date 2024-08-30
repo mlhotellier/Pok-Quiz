@@ -18,7 +18,6 @@ export const UserProvider = ({ children }) => {
     const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
       if (authUser) {
         try {
-          console.log('uid',authUser.uid);
           const userDoc = await firestore.collection('users').doc(authUser.uid).get();
           if (userDoc.exists) {
             const userData = userDoc.data();
