@@ -1,3 +1,5 @@
+<img src="https://github.com/mlhotellier/PokeQuiz/raw/main/head_readme.webp" alt="Head project img" style="width: 100%;">
+
 # PokeQuiz
 
 **PokeQuiz** est une application mobile ludique et éducative basée sur l'univers Pokémon. Elle permet aux utilisateurs de tester leurs connaissances sur Pokémon grâce à différents quiz, de consulter un Pokédex interactif, et de participer à une ligue virtuelle.
@@ -23,16 +25,15 @@
 
 1. **Clonez le dépôt** :
    
-   ```bash
+```bash
    git clone https://github.com/username/PokeQuiz.git
    cd PokeQuiz
-   ```
+```
 
 Installez les dépendances :
-
-    ```bash
+```bash
     npm install
-    ```
+```
 
 Créez un fichier .env : Copiez le contenu du fichier .env.example et remplissez-le avec vos informations Firebase :
 
@@ -49,31 +50,41 @@ FIREBASE_APP_ID_ANDROID=your_firebase_app_id_android
 Lancez l'application :
 
 ```bash
-expo start
+    npx expo start
 ```
 
 ## 🛠️ Développement
-Structure du projet
+
+Structure du projet: 
+
 /assets : Contient les icônes, images, et autres ressources.
+
 /components : Composants réutilisables de l'application.
+
 /screens : Écrans principaux (PokéQuiz, Pokédex, etc.).
+
 /context : Fournit les données globales (ex : contexte utilisateur).
+
 /utils : Contient les fonctions utilitaires comme authUtils.js.
+
 firebaseConfig.js : Configuration Firebase basée sur les variables d'environnement.
 
 ## Technologies utilisées
 React Native : Framework principal.
+
 Expo : Simplifie le développement mobile.
+
 Firebase : Authentification, base de données, et stockage.
 
 ⚙️ Configuration Firebase
-Allez sur Firebase Console.
-Créez un projet ou utilisez un projet existant.
-Configurez l'application Android et iOS :
-Téléchargez le fichier google-services.json pour Android.
-Téléchargez le fichier GoogleService-Info.plist pour iOS.
-Placez les fichiers dans le dossier racine :
+1- Allez sur Firebase Console.
+2- Créez un projet ou utilisez un projet existant.
+3- Configurez l'application Android et iOS :
+    - Téléchargez le fichier google-services.json pour Android.
+    - Téléchargez le fichier GoogleService-Info.plist pour iOS.
+4- Placez les fichiers dans le dossier racine :
 google-services.json pour Android.
+
 GoogleService-Info.plist pour iOS.
 
 ## 🧪 Tests
