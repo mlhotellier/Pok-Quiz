@@ -40,7 +40,7 @@ const AppContent = () => {
       <Stack.Navigator initialRouteName={user ? "MainApp" : "Auth"}>
         <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: false }} />
         <Stack.Screen name="MainApp" options={{ headerShown: false }}>
-          {(props) => <MainApp {...props} isLoading={userLoading} pokemonData={pokemonData} expoPushToken={expoPushToken} />}
+          {(props) => <MainApp {...props} isLoading={userLoading} pokemonData={pokemonData} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
