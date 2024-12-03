@@ -76,6 +76,12 @@ const PokedexStack = ({ pokemonData, isLoading }) => {
 };
 
 const MainApp = ({ isLoading, pokemonData }) => {
+  console.log(pokemonData,'MainApp.js')
+
+  if (isLoading) {
+    return <Text>Loading...</Text>;
+  }
+  
   return (
     <Drawer.Navigator
       initialRouteName="PokeQuiz"

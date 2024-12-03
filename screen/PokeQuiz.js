@@ -7,6 +7,7 @@ import { auth, firestore } from '../config/firebaseConfig';
 import { useUser } from '../context/UserContext';
 
 const PokeQuiz = ({ pokemonData }) => {
+  console.log(pokemonData,'PokeQuiz.js')
   const { profileData, setProfileData, loading } = useUser();
   const timeQuiz = 60; // Temps initial pour le quiz en secondes
   const [userInput, setUserInput] = useState('');
@@ -261,6 +262,7 @@ const PokeQuiz = ({ pokemonData }) => {
   }
 
   return (
+    loading ?  <Text>Loading...</Text> :
     <View style={styles.container}>
       <QuizQuestion
         randomPokemon={randomPokemon}

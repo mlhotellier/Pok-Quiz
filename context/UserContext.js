@@ -21,6 +21,7 @@ export const UserProvider = ({ children }) => {
           const userDoc = await firestore.collection('users').doc(authUser.uid).get();
           if (userDoc.exists) {
             const userData = userDoc.data();
+            console.log('User connected')
             setUser({ ...authUser, ...userData });
             setProfileData(userData);
           } else {

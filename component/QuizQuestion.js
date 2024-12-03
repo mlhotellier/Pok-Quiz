@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   optionButtonText: {
     color: '#222222',
     textTransform:'uppercase',
-    fontSize: '15.2em',
+    fontSize: 15.2,
     fontWeight: 'bold',
     textAlign: 'center',
   },
