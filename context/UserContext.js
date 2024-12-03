@@ -21,11 +21,9 @@ export const UserProvider = ({ children }) => {
           const userDoc = await firestore.collection('users').doc(authUser.uid).get();
           if (userDoc.exists) {
             const userData = userDoc.data();
-            console.log('User connected')
             setUser({ ...authUser, ...userData });
             setProfileData(userData);
           } else {
-            console.log('No user data found for:', authUser.uid);
             setUser(authUser);
           }
         } catch (error) {
@@ -33,7 +31,6 @@ export const UserProvider = ({ children }) => {
           setUser(authUser);
         }
       } else {
-        console.log('User not connected');
         setUser(null);
         setProfileData({
           id: '',

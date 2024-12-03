@@ -4,7 +4,6 @@ import { auth } from '../config/firebaseConfig';
 export const handleSignOut = async (navigation) => {
   try {
     await auth.signOut();
-    console.log('User signed out');
     if (navigation) {
       navigation.navigate('Auth');  // Vous pouvez ajuster la navigation selon vos besoins
     } else {
